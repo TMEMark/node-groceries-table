@@ -1,5 +1,6 @@
+const express = require("express");
 const mongoose = require("mongoose");
-import api from "express";
+const api = express();
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -25,10 +26,108 @@ const groceryArray = [
 
 groceryArray.forEach(function (n) {
   grocery.findOneAndUpdate(n, n, { upsert: true }, function (err, doc) {
-    console.log(doc);
+    // console.log(doc);
   });
 });
 
-api.get("/grocery", function (req, res) {
-  res.send("hello world");
+api.get("/groceries", function (req, res) {
+  var quantity = grocery.aggregate(
+    [
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$quantity",
+          },
+        },
+      },
+    ],
+    function (err, result) {
+      if (err) {
+        res.send(err);
+      } else {
+        res.json(result);
+      }
+    }
+  );
+  var price = grocery.aggregate(
+    [
+      {
+        $group: {
+          _id: null,
+          price: {
+            $sum: {
+              $multiply: [
+                {
+                  $add: [
+                    "$price",
+                    {
+                      $multiply: ["$price", 0.18],
+                    },
+                  ],
+                },
+                "$quantity",
+              ],
+            },
+          },
+        },
+      },
+    ],
+    function (err, result) {
+      if (err) {
+        res.send(err);
+      } else {
+        res.json(result);
+      }
+    }
+  );
+  var object = {
+    numberOfArticles: quantity,
+    taxes: 18,
+    totalPrice: price,
+  };
+
+  res.json(object);
+
+  // console.log(quantity);
+});
+
+api.get("/groceries1", function (req, res) {
+  var price = grocery.aggregate(
+    [
+      {
+        $group: {
+          _id: null,
+          price: {
+            $sum: {
+              $multiply: [
+                {
+                  $add: [
+                    "$price",
+                    {
+                      $multiply: ["$price", 0.18],
+                    },
+                  ],
+                },
+                "$quantity",
+              ],
+            },
+          },
+        },
+      },
+    ],
+    function (err, result) {
+      if (err) {
+        res.send(err);
+      } else {
+        res.json(result);
+      }
+    }
+  );
+
+  // console.log(quantity);
+});
+
+api.listen(3001, () => {
+  console.log("running on port 3001");
 });

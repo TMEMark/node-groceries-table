@@ -1,6 +1,6 @@
-const express = require("express");
-const app = require("express");
-const typescript = require("typescript");
+// const express = require("express");
+// const app = require("express");
+// const typescript = require("typescript");
 
 function grocData(name, quantity, price) {
   this.name = name;

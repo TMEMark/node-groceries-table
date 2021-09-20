@@ -31,88 +31,59 @@ groceryArray.forEach(function (n) {
 });
 
 api.get("/groceries", function (req, res) {
-  var quantity = grocery.aggregate(
+  grocery.aggregate(
     [
       {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$quantity",
-          },
-        },
-      },
-    ],
-    function (err, result) {
-      if (err) {
-        res.send(err);
-      } else {
-        res.json(result);
-      }
-    }
-  );
-  var price = grocery.aggregate(
-    [
-      {
-        $group: {
-          _id: null,
-          price: {
-            $sum: {
-              $multiply: [
-                {
-                  $add: [
-                    "$price",
-                    {
-                      $multiply: ["$price", 0.18],
-                    },
-                  ],
+        $facet: {
+          numberOfArticles: [
+            {
+              $group: {
+                _id: null,
+                total: {
+                  $sum: "$quantity",
                 },
-                "$quantity",
-              ],
+              },
             },
-          },
-        },
-      },
-    ],
-    function (err, result) {
-      if (err) {
-        res.send(err);
-      } else {
-        res.json(result);
-      }
-    }
-  );
-  var object = {
-    numberOfArticles: quantity,
-    taxes: 18,
-    totalPrice: price,
-  };
-
-  res.json(object);
-
-  // console.log(quantity);
-});
-
-api.get("/groceries1", function (req, res) {
-  var price = grocery.aggregate(
-    [
-      {
-        $group: {
-          _id: null,
-          price: {
-            $sum: {
-              $multiply: [
-                {
-                  $add: [
-                    "$price",
-                    {
-                      $multiply: ["$price", 0.18],
-                    },
-                  ],
+          ],
+          taxes: [
+            {
+              $group: {
+                _id: null,
+                taxes: {
+                  $sum: {
+                    $multiply: [
+                      {
+                        $multiply: ["$price", 0.18],
+                      },
+                      "$quantity",
+                    ],
+                  },
                 },
-                "$quantity",
-              ],
+              },
             },
-          },
+          ],
+          totalPrice: [
+            {
+              $group: {
+                _id: null,
+                price: {
+                  $sum: {
+                    $multiply: [
+                      {
+                        $add: [
+                          "$price",
+                          {
+                            $multiply: ["$price", 0.18],
+                          },
+                        ],
+                      },
+                      "$quantity",
+                    ],
+                  },
+                },
+              },
+            },
+          ],
         },
       },
     ],
@@ -124,8 +95,6 @@ api.get("/groceries1", function (req, res) {
       }
     }
   );
-
-  // console.log(quantity);
 });
 
 api.listen(3001, () => {
